@@ -3,7 +3,7 @@
 #include <SFML/Graphics.hpp>
 #endif
 
-class Gradient : public sf::Drawable
+class Gradient
 {
 public:
     Gradient(unsigned int width, unsigned int height);
@@ -12,10 +12,15 @@ public:
     void pollEvents(sf::Event evnt);
     void update();
 
+    void draw(sf::RenderWindow &window);
+
 private:
-    virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
+
 
 private:
     sf::RectangleShape body;
 
+    sf::Shader shader;
+
+    sf::RenderTexture texture;
 };

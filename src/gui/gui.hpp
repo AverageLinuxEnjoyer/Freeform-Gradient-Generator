@@ -16,6 +16,8 @@ public:
 private:
     virtual void draw(sf::RenderTarget& target, sf::RenderStates states) const;
 
+    void loadMainInterface();
+
 private:
     std::unique_ptr<sf::RenderWindow> window_ptr;
 };

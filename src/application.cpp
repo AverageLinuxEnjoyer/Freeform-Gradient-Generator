@@ -2,6 +2,8 @@
 
 Application::Application(unsigned int width, unsigned int height, std::string name)
     : window(sf::VideoMode(width, height), name),
+      initialWidth(width),
+      initialHeight(height),
       gradient(500, 500),
       view(window.getView()),
       gui(window)
@@ -35,7 +37,7 @@ void Application::pollEvents()
     sf::Event evnt;
     while (this->window.pollEvent(evnt))
     {
-        gui.pollEvents(evnt);
+        this->gui.pollEvents(evnt);
 
         if (evnt.type == sf::Event::Closed)
             this->close();
@@ -47,12 +49,22 @@ void Application::pollEvents()
 void Application::update(sf::Time deltaTime)
 {
     gui.update(deltaTime);
+
+
+    // float width_ratio = this->initialWidth / this->window.getSize().x;
+    // float height_ratio = this->initialHeight / this->window.getSize().y;
+
+    // sf::View new_view = this->window.getView();
+    // new_view.setViewport(sf::FloatRect(0, 0, 1 / width_ratio, 1 / height_ratio));
+    // this->window.setView(new_view);
+
+    // Some ugly errors 
 }
 
 void Application::draw()
 {
     this->window.clear();
-    this->window.draw(gradient);
+    this->gradient.draw(this->window);
     this->window.draw(gui);
     this->window.display();
 }
@@ -63,8 +75,8 @@ void Application::close()
 }
 
 void Application::handleDragAndZoom(sf::Event evnt)
-{
-    if (evnt.type == sf::Event::MouseButtonPressed)
+{   
+    if (evnt.type == sf::Event::MouseButtonPressed && sf::Mouse::getPosition(this->window).x > 400)
     {
         if (evnt.mouseButton.button == sf::Mouse::Button::Left)
         {

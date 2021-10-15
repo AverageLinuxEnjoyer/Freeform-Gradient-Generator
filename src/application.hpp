@@ -23,6 +23,9 @@ private:
 
 private:
     sf::RenderWindow window;
+    const unsigned int initialWidth;
+    const unsigned int initialHeight;
+
     Gradient gradient;
     Gui gui;
 
