@@ -1,18 +1,21 @@
 #ifndef APPLICATION_HPP
 #define APPLICATION_HPP
-#include "gradient.hpp"
+#include "gradient/gradient.hpp"
 #include "gui/gui.hpp"
 #endif
+
 
 class Application {
 
 public:
-    Application(unsigned int width, unsigned int height, std::string name);
-    ~Application();
+    static Application& getInstance(unsigned int width = 0, unsigned int height = 0, std::string name = 0);
 
     void run();
 
 private:
+    Application(unsigned int width, unsigned int height, std::string name);
+    ~Application();
+
     void pollEvents();
     void handleDragAndZoom(sf::Event evnt);
 
@@ -23,14 +26,21 @@ private:
 
 private:
     sf::RenderWindow window;
-    const unsigned int initialWidth;
-    const unsigned int initialHeight;
+
+    struct {
+        const std::string initialName;
+        const sf::Vector2u initialSize;
+    } details;
 
     Gradient gradient;
     Gui gui;
 
-    sf::Vector2f oldPos;
-    bool moving = false;
-    float zoom = 1;
-    sf::View view;
+    struct 
+    {
+        sf::Vector2f oldPos;
+        bool moving = false;
+        float zoom = 1.0;
+        sf::View view;
+    } dragAndZoom;
+    
 };

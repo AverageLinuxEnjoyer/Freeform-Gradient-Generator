@@ -2,6 +2,5 @@
 
 int main()
 {
-    Application app(1280,720,"hello");
-    app.run();
+    Application::getInstance(1280, 720, "Freeform Gradient Generator").run();
 }

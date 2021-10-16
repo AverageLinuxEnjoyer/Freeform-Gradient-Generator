@@ -1,26 +1,48 @@
 #include "application.hpp"
+#include <iostream>
 
+Application &Application::getInstance(unsigned int width, unsigned int height, std::string name)
+{
+    static Application instance(width, height, name);
+
+    return instance;
+}
+
+/**
+ * @brief Construct a new Application object that encompasses the entire program.
+ * 
+ * @param width width of the window
+ * @param height height of the window
+ * @param name name of the window
+ */
 Application::Application(unsigned int width, unsigned int height, std::string name)
     : window(sf::VideoMode(width, height), name),
-      initialWidth(width),
-      initialHeight(height),
-      gradient(500, 500),
-      view(window.getView()),
-      gui(window)
+      details({std::string(name), sf::Vector2u(width, height)}),
+      gradient(1000, 1000),
+      gui(window),
+      dragAndZoom({sf::Vector2f(), false, 1, window.getView()})
 {
 
 }
 
+/**
+ * @brief Destroy the Application object. 
+ * 
+ */
 Application::~Application()
 {
 
 }
 
+/**
+ * @brief Runs the main loop.
+ * 
+ */
 void Application::run()
 {
     sf::Clock deltaClock;
 
-    while (true)
+    while (this->window.isOpen())
     {
         sf::Time deltaTime = deltaClock.restart();
 
@@ -32,12 +54,22 @@ void Application::run()
     }
 }
 
+/**
+ * @brief Handles the events (such as clicks, key presses, window closing). 
+ * Called each frame.
+ * 
+ */
 void Application::pollEvents()
 {
     sf::Event evnt;
     while (this->window.pollEvent(evnt))
     {
         this->gui.pollEvents(evnt);
+
+        sf::Vector2i mousePixelPos = sf::Mouse::getPosition(this->window);
+        sf::Vector2f mouseWorldPos = this->window.mapPixelToCoords(mousePixelPos);
+
+        this->gradient.pollEvents(evnt, mouseWorldPos);
 
         if (evnt.type == sf::Event::Closed)
             this->close();
@@ -46,78 +78,89 @@ void Application::pollEvents()
     }
 }
 
+/**
+ * @brief Updates the state of the program. 
+ * Called each frame.
+ * 
+ * @param deltaTime needed for time based updates, only used by ImGui as of now.
+ */
 void Application::update(sf::Time deltaTime)
 {
     gui.update(deltaTime);
-
-
-    // float width_ratio = this->initialWidth / this->window.getSize().x;
-    // float height_ratio = this->initialHeight / this->window.getSize().y;
-
-    // sf::View new_view = this->window.getView();
-    // new_view.setViewport(sf::FloatRect(0, 0, 1 / width_ratio, 1 / height_ratio));
-    // this->window.setView(new_view);
-
-    // Some ugly errors 
 }
 
+/**
+ * @brief Makes all the draw calls to display everything on the screen.
+ * 
+ */
 void Application::draw()
 {
-    this->window.clear();
+    this->window.clear(sf::Color(25,25,32));
     this->gradient.draw(this->window);
     this->window.draw(gui);
     this->window.display();
 }
 
+/**
+ * @brief Called when the program should be closed.
+ * Currently only closes the window. It's extracted in a function so new features can easily be added before the program closes.
+ * 
+ */
 void Application::close()
 {
     this->window.close();
 }
 
+/**
+ * @brief Handles the pan and zoom with mouse.
+ * Has helping variables stored in the Application::dragAndZoom object. 
+ * 
+ * @param evnt object containing information about the most recent event
+ */
 void Application::handleDragAndZoom(sf::Event evnt)
 {   
     if (evnt.type == sf::Event::MouseButtonPressed && sf::Mouse::getPosition(this->window).x > 400)
     {
         if (evnt.mouseButton.button == sf::Mouse::Button::Left)
         {
-            moving = true;
-            oldPos = window.mapPixelToCoords(sf::Vector2i(evnt.mouseButton.x, evnt.mouseButton.y));
+            dragAndZoom.moving = true;
+            dragAndZoom.oldPos = this->window.mapPixelToCoords(sf::Vector2i(evnt.mouseButton.x, evnt.mouseButton.y));
         }
     }
     else if (evnt.type == sf::Event::MouseButtonReleased)
     {
         if (evnt.mouseButton.button == sf::Mouse::Button::Left)
-            moving = false;
+            dragAndZoom.moving = false;
     }
-    else if (evnt.type == sf::Event::MouseMoved && moving)
+    else if (evnt.type == sf::Event::MouseMoved && dragAndZoom.moving)
     {
-        const sf::Vector2f newPos = window.mapPixelToCoords(sf::Vector2i(evnt.mouseMove.x, evnt.mouseMove.y));
+        const sf::Vector2f newPos = this->window.mapPixelToCoords(sf::Vector2i(evnt.mouseMove.x, evnt.mouseMove.y));
 
-        const sf::Vector2f deltaPos = oldPos - newPos;
+        const sf::Vector2f deltaPos = dragAndZoom.oldPos - newPos;
 
-        view.setCenter(view.getCenter() + deltaPos);
-        window.setView(view);
+        dragAndZoom.view.setCenter(dragAndZoom.view.getCenter() + deltaPos);
+        this->window.setView(dragAndZoom.view);
 
-        oldPos = window.mapPixelToCoords(sf::Vector2i(evnt.mouseMove.x, evnt.mouseMove.y));
+        dragAndZoom.oldPos = this->window.mapPixelToCoords(sf::Vector2i(evnt.mouseMove.x, evnt.mouseMove.y));
     }
-    else if (evnt.type == sf::Event::MouseMoved && moving)
+    else if (evnt.type == sf::Event::MouseMoved && dragAndZoom.moving)
     {
-        const sf::Vector2f newPos = window.mapPixelToCoords(sf::Vector2i(evnt.mouseMove.x, evnt.mouseMove.y));
-        const sf::Vector2f deltaPos = oldPos - newPos;
-        view.setCenter(view.getCenter() + deltaPos);
-        window.setView(view);
+        const sf::Vector2f newPos = this->window.mapPixelToCoords(sf::Vector2i(evnt.mouseMove.x, evnt.mouseMove.y));
+        const sf::Vector2f deltaPos = dragAndZoom.oldPos - newPos;
+        dragAndZoom.view.setCenter(dragAndZoom.view.getCenter() + deltaPos);
+        window.setView(dragAndZoom.view);
 
-        oldPos = window.mapPixelToCoords(sf::Vector2i(evnt.mouseMove.x, evnt.mouseMove.y));
+        dragAndZoom.oldPos = this->window.mapPixelToCoords(sf::Vector2i(evnt.mouseMove.x, evnt.mouseMove.y));
     }
-    else if (evnt.type == sf::Event::MouseWheelScrolled && !moving)
+    else if (evnt.type == sf::Event::MouseWheelScrolled && !dragAndZoom.moving)
     {
         if (evnt.mouseWheelScroll.delta <= -1)
-            zoom = std::min(2.f, zoom + .1f);
+            dragAndZoom.zoom = std::min(2.f, dragAndZoom.zoom + .1f);
         else if (evnt.mouseWheelScroll.delta >= 1)
-            zoom = std::max(.5f, zoom - .1f);
+            dragAndZoom.zoom = std::max(.5f, dragAndZoom.zoom - .1f);
 
-        view.setSize(window.getDefaultView().getSize());
-        view.zoom(zoom);
-        window.setView(view);
+        dragAndZoom.view.setSize(window.getDefaultView().getSize());
+        dragAndZoom.view.zoom(dragAndZoom.zoom);
+        this->window.setView(dragAndZoom.view);
     }
 }
