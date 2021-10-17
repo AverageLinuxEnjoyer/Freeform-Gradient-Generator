@@ -8,13 +8,12 @@
 class Application {
 
 public:
-    static Application& getInstance(unsigned int width = 0, unsigned int height = 0, std::string name = 0);
+    Application(unsigned int width, unsigned int height, std::string name);
+    ~Application();
 
     void run();
 
 private:
-    Application(unsigned int width, unsigned int height, std::string name);
-    ~Application();
 
     void pollEvents();
     void handleDragAndZoom(sf::Event evnt);
@@ -30,7 +29,7 @@ private:
     struct {
         const std::string initialName;
         const sf::Vector2u initialSize;
-    } details;
+    } info;
 
     Gradient gradient;
     Gui gui;
@@ -41,6 +40,7 @@ private:
         bool moving = false;
         float zoom = 1.0;
         sf::View view;
+        bool ctrlPressed = false;
     } dragAndZoom;
     
 };

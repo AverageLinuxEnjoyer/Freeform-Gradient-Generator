@@ -6,6 +6,7 @@
 #include <imgui.h>
 #endif
 
+
 static sf::Color getRandomColor()
 {
     static std::random_device dev;
@@ -13,7 +14,6 @@ static sf::Color getRandomColor()
     std::uniform_int_distribution<std::mt19937::result_type> colorRange(0,255);
 
     return sf::Color(colorRange(rng), colorRange(rng), colorRange(rng));
-
 }
 
 static ImVec4 getImVecColor(sf::Color color)

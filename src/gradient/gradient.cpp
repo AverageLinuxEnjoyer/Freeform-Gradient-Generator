@@ -3,6 +3,12 @@
 #include "gradient_shader.hpp"
 #include <iostream>
 
+/**
+ * @brief Construct a new Gradient object.
+ * 
+ * @param width width of the gradient (can be scaled at export)
+ * @param height height of the gradient (can be scaled at export)
+ */
 Gradient::Gradient(unsigned int width, unsigned int height)
     : body(sf::Vector2f(width, height)),
       size(width, height)
@@ -16,25 +22,35 @@ Gradient::Gradient(unsigned int width, unsigned int height)
     this->shader.setUniform("gradient_height", static_cast<int>(height));
 }      
 
+/**
+ * @brief Destroy the Gradient object
+ * 
+ */
 Gradient::~Gradient()
 {
     
 }
 
+/**
+ * @brief Handles any input related to the gradient. (ex: addition of new points) 
+ * 
+ * @param evnt object containing info about the most recent event
+ * @param mouseWorldPos position of the mouse in the view
+ */
 void Gradient::pollEvents(sf::Event evnt, sf::Vector2f mouseWorldPos)
 {
+
     if (evnt.type == sf::Event::MouseButtonPressed && 
         evnt.mouseButton.button == sf::Mouse::Right &&
-        sf::FloatRect(sf::Vector2f(0.0f, 0.0f), body.getSize()).contains(mouseWorldPos))
+        sf::FloatRect(sf::Vector2f(0.0f, 0.0f), this->body.getSize()).contains(mouseWorldPos))
     {
-        sf::Color randomColor = getRandomColor();
-        points.push_back(Point(mouseWorldPos, randomColor));
+        this->points.push_back(Point(mouseWorldPos, getRandomColor()));
 
-        shader.setUniform("used_points", static_cast<int>(points.size()));
+        this->shader.setUniform("used_points", static_cast<int>(this->points.size()));
 
-        int point_index = points.size() - 1;
-        shader.setUniform("points[" + std::to_string(point_index) + "]", mouseWorldPos);
-        shader.setUniform("colors[" + std::to_string(point_index) + "]", sf::Glsl::Vec4(points[point_index].getSfColor()));
+        int point_index = this->points.size() - 1;
+        this->shader.setUniform("points[" + std::to_string(point_index) + "]", mouseWorldPos);
+        this->shader.setUniform("colors[" + std::to_string(point_index) + "]", sf::Glsl::Vec4(this->points[point_index].getSfColor()));
     }
     else if (evnt.type == sf::Event::KeyPressed && evnt.key.code == sf::Keyboard::P)
     {
@@ -50,12 +66,30 @@ void Gradient::pollEvents(sf::Event evnt, sf::Vector2f mouseWorldPos)
             std::cout << "\t<2>imcolor:\t(" << imcolor.x << ", " << imcolor.y << ", " << imcolor.z << ", " << imcolor.w << ")\n\n";
         }
     }
+
+    for (int i = 0; i < this->points.size(); i++)
+        this->points[i].pollEvents(evnt, mouseWorldPos);
 }
 
 void Gradient::update()
 {
+    for (int i = 0; i < this->points.size(); i++)
+    {
+        this->points[i].update();
+
+        if (points[i].getChanged())
+        {
+            this->shader.setUniform("points[" + std::to_string(i) + "]", this->points[i].getPosition());
+            this->shader.setUniform("colors[" + std::to_string(i) + "]", sf::Glsl::Vec4(this->points[i].getSfColor()));
+        }
+    }
 }
 
+/**
+ * @brief Draws the gradient and the point handles.
+ * 
+ * @param window where the draw will happen
+ */
 void Gradient::draw(sf::RenderWindow& window)
 {
     this->texture.clear();

@@ -1,12 +1,6 @@
 #include "application.hpp"
 #include <iostream>
 
-Application &Application::getInstance(unsigned int width, unsigned int height, std::string name)
-{
-    static Application instance(width, height, name);
-
-    return instance;
-}
 
 /**
  * @brief Construct a new Application object that encompasses the entire program.
@@ -14,10 +8,10 @@ Application &Application::getInstance(unsigned int width, unsigned int height, s
  * @param width width of the window
  * @param height height of the window
  * @param name name of the window
- */
+ */ 
 Application::Application(unsigned int width, unsigned int height, std::string name)
     : window(sf::VideoMode(width, height), name),
-      details({std::string(name), sf::Vector2u(width, height)}),
+      info({std::string(name), sf::Vector2u(width, height)}),
       gradient(1000, 1000),
       gui(window),
       dragAndZoom({sf::Vector2f(), false, 1, window.getView()})
@@ -56,7 +50,6 @@ void Application::run()
 
 /**
  * @brief Handles the events (such as clicks, key presses, window closing). 
- * Called each frame.
  * 
  */
 void Application::pollEvents()
@@ -80,13 +73,13 @@ void Application::pollEvents()
 
 /**
  * @brief Updates the state of the program. 
- * Called each frame.
  * 
  * @param deltaTime needed for time based updates, only used by ImGui as of now.
  */
 void Application::update(sf::Time deltaTime)
 {
     gui.update(deltaTime);
+    gradient.update();
 }
 
 /**
@@ -95,7 +88,7 @@ void Application::update(sf::Time deltaTime)
  */
 void Application::draw()
 {
-    this->window.clear(sf::Color(25,25,32));
+    this->window.clear(sf::Color(25,25,30));
     this->gradient.draw(this->window);
     this->window.draw(gui);
     this->window.display();
@@ -119,7 +112,11 @@ void Application::close()
  */
 void Application::handleDragAndZoom(sf::Event evnt)
 {   
-    if (evnt.type == sf::Event::MouseButtonPressed && sf::Mouse::getPosition(this->window).x > 400)
+    if (evnt.type == sf::Event::KeyPressed && evnt.key.code == sf::Keyboard::LControl)
+        this->dragAndZoom.ctrlPressed = true;
+    else if (evnt.type == sf::Event::KeyReleased && evnt.key.code == sf::Keyboard::LControl)
+        this->dragAndZoom.ctrlPressed = false;
+    else if (evnt.type == sf::Event::MouseButtonPressed && sf::Mouse::getPosition(this->window).x > 400 && !this->dragAndZoom.ctrlPressed)
     {
         if (evnt.mouseButton.button == sf::Mouse::Button::Left)
         {
